@@ -1,0 +1,94 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties Property[]
+}
+
+model Property {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      Int
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories Category[]
+  expenses   Expense[]
+  debtors    Debtor[]
+
+  @@index([userId])
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String
+  createdAt  DateTime @default(now())
+  propertyId Int
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([propertyId, name])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  receiptPath String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  categoryId  Int
+  propertyId  Int
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([categoryId])
+  @@index([date])
+}
+
+model Debtor {
+  id         Int      @id @default(autoincrement())
+  name       String
+  createdAt  DateTime @default(now())
+  propertyId Int
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@unique([propertyId, name])
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  amount    Decimal  @db.Decimal(10, 2)
+  date      DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+  debtorId  Int
+
+  debtor Debtor @relation(fields: [debtorId], references: [id], onDelete: Cascade)
+
+  @@index([debtorId])
+  @@index([date])
+}
