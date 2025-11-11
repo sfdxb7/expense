@@ -1,398 +1,365 @@
 # Expense Tracker
 
-A full-stack web application for tracking expenses across multiple properties with debtor management and reporting capabilities. Built with React, Node.js, Express, PostgreSQL, and designed for self-hosting via Docker.
+A modern, full-stack expense tracking application with property management, built with React, Node.js, and PostgreSQL.
 
 ## Features
 
-### Core Functionality
-- **Multi-Workspace Support** - Each user has their own isolated workspace
-- **Property Management** - Track expenses for multiple properties (buildings, houses, farms, etc.)
-- **Expense Tracking** - Record expenses with categories, dates, amounts, descriptions, and optional receipt uploads
-- **Inline Category Management** - Create, edit, and delete categories directly from the expense form dropdown
-- **Debtor & Payment Tracking** - Track who owes you money and record payments received
-- **Running Balance** - Real-time calculation of balance (total expenses - total payments)
-- **Comprehensive Reports** - Generate yearly or custom date range reports with export functionality
-
-### Technical Features
-- **Mobile-First Design** - Responsive UI optimized for phones, tablets, and desktop
-- **Secure Authentication** - JWT-based authentication with bcrypt password hashing
-- **File Upload Support** - Attach receipts (images/PDFs) to expenses
-- **Modern UI** - Built with Tailwind CSS and shadcn/ui components
-- **Self-Contained** - Everything runs in Docker containers (frontend, backend, database)
-- **AED Currency** - Default currency set to UAE Dirham (easily customizable)
+- 🏢 **Property Management** - Track expenses across multiple properties
+- 💰 **Expense Tracking** - Categorize and manage expenses with receipt uploads
+- 👥 **Reimbursement Tracking** - Manage debtors and payment records
+- 📊 **Reports & Analytics** - Generate expense reports and summaries
+- 🔐 **Secure Authentication** - JWT-based auth with bcrypt password hashing
+- 🌙 **Dark Mode** - Modern 2025 UI with dark mode support
+- 📱 **Responsive Design** - Works on desktop and mobile devices
+- 📎 **File Uploads** - Upload receipts (images/PDFs up to 20MB)
 
 ## Tech Stack
 
 ### Frontend
-- React 18
-- Vite
-- Tailwind CSS
-- Radix UI / shadcn/ui components
-- React Router
-- Axios
+- React 18 with Vite
+- Tailwind CSS + shadcn/ui components
+- React Router for navigation
+- Axios for API calls
+- Context API for state management
 
 ### Backend
-- Node.js
-- Express
-- Prisma ORM
-- PostgreSQL
+- Node.js 18 with Express
+- Prisma ORM for database management
+- PostgreSQL 15 database
 - JWT authentication
-- Multer (file uploads)
+- Multer for file uploads
+- Helmet.js for security headers
+- Rate limiting and input sanitization
 
 ### Deployment
 - Docker & Docker Compose
-- Nginx (reverse proxy)
-- PostgreSQL (database)
+- GitHub Actions for CI/CD
+- GitHub Container Registry (GHCR)
+- Coolify-ready configuration
+- Multi-platform support (amd64, arm64)
+
+## Quick Start
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Node.js 18+ (for local development)
+- Git
+
+### Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/sfdxb7/expense.git
+   cd expense
+   ```
+
+2. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env and set secure values for JWT_SECRET and POSTGRES_PASSWORD
+   ```
+
+3. **Start with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the application**
+   - Frontend: http://localhost:3333
+   - Backend API: http://localhost:3001
+   - Database: localhost:5433
+
+5. **Create your first user**
+   ```bash
+   docker-compose exec backend node scripts/createUser.js
+   ```
+   Follow the prompts to create an admin user.
+
+## Deployment
+
+### Option 1: Coolify with GitHub Actions (Recommended)
+
+For production deployment with automated CI/CD:
+
+1. **Read the deployment guide**
+   - See [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) for detailed instructions
+   - See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) for CI/CD setup
+
+2. **Quick summary:**
+   - Push code triggers GitHub Actions
+   - Actions build and test Docker images
+   - Images pushed to GitHub Container Registry
+   - Coolify pulls pre-built images for fast deployment
+
+### Option 2: Manual Docker Deployment
+
+Deploy anywhere that supports Docker Compose:
+
+```bash
+# Set environment variables
+export JWT_SECRET=$(openssl rand -hex 64)
+export POSTGRES_PASSWORD=$(openssl rand -hex 32)
+export FRONTEND_URL=https://your-domain.com
+
+# Deploy
+docker-compose up -d
+```
 
 ## Project Structure
 
 ```
 expense-tracker/
-├── backend/
-│   ├── prisma/
-│   │   └── schema.prisma          # Database schema
+├── backend/                 # Node.js + Express API
 │   ├── src/
-│   │   ├── controllers/           # Request handlers
-│   │   ├── middleware/            # Auth, file upload
-│   │   ├── routes/                # API routes
-│   │   └── server.js              # Express app
-│   ├── Dockerfile
-│   └── package.json
-├── frontend/
+│   │   ├── controllers/    # Request handlers
+│   │   ├── routes/         # API routes
+│   │   ├── middleware/     # Auth, validation, security
+│   │   └── lib/            # Prisma client, utilities
+│   ├── prisma/             # Database schema
+│   └── scripts/            # User management scripts
+├── frontend/                # React + Vite app
 │   ├── src/
-│   │   ├── components/            # React components
-│   │   ├── pages/                 # Page components
-│   │   ├── lib/                   # Utilities, API client
-│   │   └── context/               # Auth context
-│   ├── Dockerfile
-│   ├── nginx.conf                 # Nginx configuration
-│   └── package.json
-├── docker-compose.yml
-├── .env.example
-└── README.md
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── context/        # React context providers
+│   │   └── lib/            # API client, utilities
+│   └── nginx.conf          # Nginx configuration
+├── .github/
+│   └── workflows/          # GitHub Actions CI/CD
+├── docker-compose.yml      # Local development
+├── docker-compose.coolify.yml # Coolify deployment
+└── docs/                   # Documentation
 ```
-
-## Getting Started
-
-### Prerequisites
-- Docker
-- Docker Compose
-- Git
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd ExpenseTracker
-   ```
-
-2. **Create environment file**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Edit `.env` file and set your JWT secret**
-   ```env
-   JWT_SECRET=your-very-secure-random-secret-key-here
-   DATABASE_URL=postgresql://postgres:postgres@db:5432/expensetracker
-   NODE_ENV=production
-   PORT=3000
-   ```
-
-   **Important:** Change the `JWT_SECRET` to a strong, random string!
-
-4. **Build and start the application**
-   ```bash
-   docker-compose up -d --build
-   ```
-
-5. **Wait for services to start**
-   The database needs to initialize and migrations need to run. This takes about 30-60 seconds.
-
-6. **Access the application**
-   Open your browser and go to `http://localhost` (or your server IP)
-
-## Deployment on Coolify
-
-Coolify makes deployment even easier:
-
-1. **In Coolify Dashboard:**
-   - Create a new project
-   - Add a new resource → Docker Compose
-   - Upload or paste your `docker-compose.yml`
-
-2. **Set Environment Variables:**
-   - Add `JWT_SECRET` with a secure random value
-   - Optionally customize `DATABASE_URL` if needed
-
-3. **Deploy:**
-   - Click "Deploy"
-   - Coolify will build and start all services
-
-4. **Access:**
-   - Coolify will provide you with a public URL
-   - You can also configure a custom domain
-
-## Usage
-
-### First Time Setup
-
-1. **Register an Account**
-   - Go to the registration page
-   - Create your username, email, and password
-   - Each user gets their own isolated workspace
-
-2. **Create a Property**
-   - Click "Add Property" on the dashboard
-   - Enter property name (e.g., "Shared Building", "Mother's House")
-   - Add optional description
-
-3. **Set Up Categories**
-   - When adding your first expense, categories can be created inline
-   - Select "+ Add New Category" from the dropdown
-   - Common categories: Utilities, Maintenance, Repairs, Groceries, Staff, etc.
-
-### Managing Expenses
-
-1. **Add Expense**
-   - Navigate to a property
-   - Click "Add Expense"
-   - Select date, amount, category, description
-   - Optionally upload a receipt (image or PDF)
-   - Click "Add Expense"
-
-2. **Create Category On-the-Fly**
-   - In the expense form, select "+ Add New Category"
-   - Enter category name
-   - Click "Add" - the category is created and automatically selected
-
-3. **Edit/Delete Expenses**
-   - Click the edit or delete icon on any expense
-   - Receipts can be viewed by clicking the link
-
-### Managing Debtors & Payments
-
-1. **Add Debtor**
-   - Go to "Debtors & Payments" tab
-   - Click "Add Debtor"
-   - Enter name (e.g., "Brother", "Mother")
-
-2. **Record Payment**
-   - Click "Add" button on a debtor card
-   - Enter payment amount, date, and optional notes
-   - Click "Record Payment"
-
-3. **View Balance**
-   - Total payments are shown for each debtor
-   - The property summary shows overall balance
-
-### Generating Reports
-
-1. **Choose Report Type**
-   - Go to "Reports" tab
-   - Select "Yearly Report" or "Custom Date Range"
-
-2. **Generate Report**
-   - For yearly: select year
-   - For custom: select start and end dates
-   - Click "Generate Report"
-
-3. **View & Export**
-   - Review summary statistics
-   - See expenses by category
-   - See payments by debtor
-   - View detailed expense list
-   - Click "Export" to download as text file
 
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `GET /api/auth/profile` - Get user profile
+- `POST /api/auth/login` - User login
+- (Registration disabled - create users manually)
 
 ### Properties
 - `GET /api/properties` - List all properties
 - `POST /api/properties` - Create property
-- `GET /api/properties/:id` - Get property details
 - `PUT /api/properties/:id` - Update property
 - `DELETE /api/properties/:id` - Delete property
+
+### Expenses
+- `GET /api/expenses/property/:propertyId` - List expenses
+- `POST /api/expenses/property/:propertyId` - Create expense
+- `PUT /api/expenses/property/:propertyId/:id` - Update expense
+- `DELETE /api/expenses/property/:propertyId/:id` - Delete expense
 
 ### Categories
 - `GET /api/categories/property/:propertyId` - List categories
 - `POST /api/categories/property/:propertyId` - Create category
-- `PUT /api/categories/property/:propertyId/:id` - Update category
-- `DELETE /api/categories/property/:propertyId/:id` - Delete category
 
-### Expenses
-- `GET /api/expenses/property/:propertyId` - List expenses
-- `POST /api/expenses/property/:propertyId` - Create expense (multipart/form-data)
-- `PUT /api/expenses/property/:propertyId/:id` - Update expense
-- `DELETE /api/expenses/property/:propertyId/:id` - Delete expense
-
-### Debtors
+### Reimbursements (Debtors)
 - `GET /api/debtors/property/:propertyId` - List debtors
 - `POST /api/debtors/property/:propertyId` - Create debtor
 - `PUT /api/debtors/property/:propertyId/:id` - Update debtor
-- `DELETE /api/debtors/property/:propertyId/:id` - Delete debtor
-
-### Payments
-- `GET /api/payments/debtor/:debtorId` - List payments
-- `POST /api/payments/debtor/:debtorId` - Create payment
-- `PUT /api/payments/debtor/:debtorId/:id` - Update payment
-- `DELETE /api/payments/debtor/:debtorId/:id` - Delete payment
 
 ### Reports
-- `GET /api/reports/property/:propertyId` - Generate custom report (query params: startDate, endDate)
-- `GET /api/reports/property/:propertyId/year/:year` - Generate yearly report
+- `GET /api/reports/property/:propertyId` - Generate expense report
 
-## Database Schema
+## Configuration
 
-The application uses PostgreSQL with Prisma ORM. Key models:
+### Environment Variables
 
-- **User** - Authentication and workspace isolation
-- **Property** - Properties/buildings/houses
-- **Category** - Expense categories (per property)
-- **Expense** - Individual expenses with optional receipts
-- **Debtor** - People who owe money
-- **Payment** - Payments received from debtors
+Required variables (see `.env.example`):
 
-## Customization
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=secure_password
+POSTGRES_DB=expensetracker
 
-### Change Currency
+# Security
+JWT_SECRET=your-super-secret-jwt-key
+NODE_ENV=production
 
-Edit `frontend/src/lib/utils.js`:
-
-```javascript
-export function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD', // Change to your currency code
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
+# CORS
+FRONTEND_URL=https://your-domain.com
 ```
 
-### Modify Theme Colors
+### File Upload Limits
 
-Edit `frontend/tailwind.config.js` to customize colors.
+Default: 20MB for receipts (images and PDFs)
 
-### Change Upload Limits
+To change:
+- Backend: `backend/src/middleware/upload.js`
+- Nginx: `frontend/nginx.conf` (client_max_body_size)
+- Express: `backend/src/server.js` (body parser limits)
 
-Edit `backend/src/middleware/upload.js` to change file size limits or allowed types.
+## User Management
 
-## Troubleshooting
+Public registration is disabled for security. Create users manually:
 
-### Application won't start
-- Check Docker logs: `docker-compose logs -f`
-- Ensure ports 80, 3000, and 5432 are not in use
-- Verify `.env` file is properly configured
+### Method 1: Interactive Script (Recommended)
+```bash
+docker-compose exec backend node scripts/createUser.js
+```
 
-### Database connection errors
-- Wait 30-60 seconds for database to initialize
-- Check database logs: `docker-compose logs db`
-- Ensure DATABASE_URL is correct in `.env`
+### Method 2: Direct SQL
+```bash
+docker-compose exec db psql -U postgres -d expensetracker
+```
+```sql
+INSERT INTO "User" (username, email, password)
+VALUES ('admin', 'admin@example.com', '$2a$10$...');
+```
 
-### Can't upload receipts
-- Check backend logs: `docker-compose logs backend`
-- Ensure `uploads` directory has proper permissions
-- Verify file size is under 5MB
-- Confirm file type is JPEG, PNG, or PDF
-
-### Login not working
-- Clear browser cache and cookies
-- Ensure JWT_SECRET is set in `.env`
-- Check backend logs for errors
+See [USER_MANAGEMENT.md](USER_MANAGEMENT.md) for detailed instructions.
 
 ## Development
 
-### Local Development Setup
+### Running locally without Docker
 
-1. **Backend**
-   ```bash
-   cd backend
-   npm install
-   cp ../.env.example .env
-   # Edit .env with local DATABASE_URL
-   npx prisma migrate dev
-   npm run dev
-   ```
-
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Database**
-   ```bash
-   docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:15-alpine
-   ```
-
-### Running Migrations
-
+**Backend:**
 ```bash
 cd backend
+npm install
+npx prisma migrate dev
+npm run dev
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Database Migrations
+
+```bash
+# Create migration
 npx prisma migrate dev --name migration_name
+
+# Apply migrations (production)
+npx prisma migrate deploy
+
+# Reset database (development only)
+npx prisma migrate reset
 ```
 
-### Database Studio
+### Building for Production
 
 ```bash
-cd backend
-npx prisma studio
+# Build images
+docker-compose build
+
+# Or use GitHub Actions (automatic on push to main)
 ```
 
-## Security Considerations
+## Security Features
 
-- Change `JWT_SECRET` to a strong, random value
-- Use HTTPS in production
-- Keep Docker images updated
-- Regularly backup your database
-- Implement rate limiting if exposed to internet
-- Consider adding 2FA for sensitive deployments
+- ✅ JWT authentication with secure token handling
+- ✅ bcrypt password hashing (10 rounds)
+- ✅ Helmet.js security headers
+- ✅ CORS configuration
+- ✅ Rate limiting on auth endpoints
+- ✅ Input sanitization (XSS protection)
+- ✅ SQL injection prevention (Prisma ORM)
+- ✅ File upload validation (MIME type checking)
+- ✅ Environment variable secrets
 
-## Backup & Restore
+## Monitoring & Health Checks
 
-### Backup Database
+All services include health checks:
+
+- **Backend**: `GET /health` (30s interval)
+- **Frontend**: HTTP check (30s interval)
+- **Database**: `pg_isready` (10s interval)
+
+View status:
 ```bash
-docker-compose exec db pg_dump -U postgres expensetracker > backup.sql
+docker-compose ps
 ```
 
-### Restore Database
+## Troubleshooting
+
+### Database connection issues
 ```bash
-docker-compose exec -T db psql -U postgres expensetracker < backup.sql
+# Check if database is healthy
+docker-compose exec db pg_isready -U postgres
+
+# View database logs
+docker-compose logs db
 ```
 
-### Backup Uploaded Files
+### Backend not starting
 ```bash
-tar -czf uploads-backup.tar.gz backend/uploads/
+# Check backend logs
+docker-compose logs backend
+
+# Verify environment variables
+docker-compose exec backend env | grep DATABASE_URL
 ```
+
+### File upload 413 errors
+- Default limit: 20MB
+- Increase in: `nginx.conf`, `upload.js`, `server.js`
+- Rebuild frontend: `docker-compose up -d --build frontend`
+
+### CORS errors
+- Verify `FRONTEND_URL` in backend environment
+- Should match your actual frontend URL
+
+## CI/CD Pipeline
+
+GitHub Actions automatically:
+1. ✅ Builds Docker images on every push
+2. ✅ Runs tests and health checks
+3. ✅ Pushes to GitHub Container Registry
+4. ✅ Multi-platform builds (amd64, arm64)
+5. ✅ Signals Coolify for deployment
+
+View workflows: https://github.com/sfdxb7/expense/actions
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ## License
 
-MIT License - feel free to use this for personal or commercial projects.
+MIT License - see LICENSE file for details
 
 ## Support
 
-For issues or questions, please open an issue on GitHub or contact the maintainer.
+- 📖 Documentation: See `docs/` folder
+- 🐛 Issues: https://github.com/sfdxb7/expense/issues
+- 💬 Discussions: https://github.com/sfdxb7/expense/discussions
 
-## Roadmap
+## Changelog
 
-Potential future enhancements:
-- Multi-currency support
-- Recurring expenses
-- Budget limits and alerts
-- Mobile apps (React Native)
-- Email notifications
-- CSV/Excel export
-- Advanced analytics and charts
-- Expense splitting by percentage
-- Multi-user access per property
+### Latest Release
+
+**Features:**
+- Compact expense layout with date grouping
+- Receipt upload support (20MB images/PDFs)
+- Manual user management (registration disabled)
+- Dark mode support
+- Automated CI/CD with GitHub Actions
+- Coolify-ready deployment
+
+**Security:**
+- Multiple security enhancements
+- Rate limiting
+- Input sanitization
+- XSS protection
+
+**UI/UX:**
+- Modern 2025 design
+- Responsive layout
+- Hover interactions
+- Column-aligned expense lists
 
 ---
 
-Built with ❤️ for managing shared property expenses.
+**Built with ❤️ using React, Node.js, and PostgreSQL**

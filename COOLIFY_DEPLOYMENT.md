@@ -1,33 +1,92 @@
 # Coolify Deployment Guide
 
-This guide will help you deploy the Expense Tracker application to Coolify.
+This guide will help you deploy the Expense Tracker application to Coolify with automated GitHub Actions builds.
 
 ## Prerequisites
 
 - A Coolify instance (self-hosted or managed)
-- Git repository (GitHub, GitLab, or Bitbucket)
+- GitHub repository: https://github.com/sfdxb7/expense
 - Domain name (optional but recommended)
+- GitHub account (for Container Registry access)
 
-## Quick Start
+## Deployment Options
 
-### 1. Prepare Your Repository
+### Option 1: GitHub Actions + Pre-built Images (Recommended)
 
-Ensure all files are committed and pushed to your Git repository:
+This option uses GitHub Actions to build and test images before deployment, resulting in:
+- ✅ Faster Coolify deployments (no build time)
+- ✅ Pre-tested images
+- ✅ Automated CI/CD pipeline
+- ✅ Build caching for efficiency
+
+### Option 2: Direct Build on Coolify
+
+Coolify builds images directly from source code. Simpler but slower deployments.
+
+## Quick Start (Option 1: GitHub Actions)
+
+### 1. Enable GitHub Container Registry
+
+First, make your GitHub Container Registry images public or configure access:
+
+#### Option A: Make Images Public (Easier)
+
+1. Go to https://github.com/sfdxb7/expense/packages
+2. Click on each package (backend and frontend)
+3. Click "Package settings" → "Change visibility" → "Public"
+
+#### Option B: Use GitHub Token (More Secure)
+
+In Coolify, you'll add a GitHub Personal Access Token (PAT) with `read:packages` permission.
+
+### 2. Trigger GitHub Actions Build
+
+Push your code to trigger the first build:
 
 ```bash
-git add .
-git commit -m "Prepare for Coolify deployment"
 git push origin main
 ```
 
-### 2. Connect to Coolify
+Or manually trigger the workflow:
+1. Go to https://github.com/sfdxb7/expense/actions
+2. Click "Coolify Deployment"
+3. Click "Run workflow"
+
+Wait for the workflow to complete (2-3 minutes). This builds and pushes images to GitHub Container Registry.
+
+### 3. Connect to Coolify
 
 1. Log into your Coolify dashboard
 2. Click "Add New Resource" → "New Application"
 3. Select "Docker Compose" as the build pack
-4. Connect your Git repository
+4. Connect your Git repository: `https://github.com/sfdxb7/expense`
+5. Select branch: `main`
+6. **Important**: Set Docker Compose file path to: `docker-compose.coolify.yml`
 
-### 3. Configure Environment Variables
+### 4. Configure GitHub Actions Integration (Optional but Recommended)
+
+To make Coolify wait for GitHub Actions to complete before deploying:
+
+1. In Coolify application settings, go to "Build & Deploy"
+2. Enable "GitHub Actions Integration"
+3. Set GitHub Actions Workflow URL:
+   ```
+   https://github.com/sfdxb7/expense/actions/workflows/coolify-deploy.yml
+   ```
+4. This ensures Coolify deploys only after images are built and tested
+
+### 5. Configure GitHub Container Registry Access (If Private)
+
+If you didn't make images public, add registry credentials:
+
+1. In Coolify, go to your application → "Registries"
+2. Add new registry:
+   - Registry: `ghcr.io`
+   - Username: Your GitHub username
+   - Password: GitHub Personal Access Token with `read:packages` scope
+3. Save
+
+### 6. Configure Environment Variables
 
 In Coolify, navigate to your project's Environment Variables section and set the following:
 
@@ -76,7 +135,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 openssl rand -hex 32
 ```
 
-### 5. Configure Domain (Optional)
+### 7. Configure Domain (Optional)
 
 1. In Coolify, go to your application settings
 2. Under "Domains", add your custom domain:
@@ -84,11 +143,25 @@ openssl rand -hex 32
    - Backend API: `api.your-domain.com` (optional)
 3. Coolify will automatically handle SSL/TLS certificates
 
-### 6. Deploy
+### 8. Deploy
 
 1. Click "Deploy" in Coolify
-2. Monitor the build logs
-3. Wait for all services to become healthy (green status)
+2. If GitHub Actions integration is enabled:
+   - Coolify triggers the GitHub Action
+   - Waits for images to be built and pushed
+   - Then pulls and deploys the images (fast!)
+3. If not using GitHub Actions, Coolify builds from source (slower)
+4. Monitor the deployment logs
+5. Wait for all services to become healthy (green status)
+
+## Quick Start (Option 2: Direct Build)
+
+If you prefer Coolify to build images directly:
+
+1. Follow steps 1-3 from Option 1
+2. In step 6, use `docker-compose.yml` instead of `docker-compose.coolify.yml`
+3. Skip GitHub Actions integration
+4. Coolify will build images on each deployment
 
 ## Configuration Details
 
