@@ -8,6 +8,9 @@ const sanitizeInput = require('./middleware/sanitize');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - required when behind reverse proxy (nginx, Coolify, etc.)
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmetConfig);
 

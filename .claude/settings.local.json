@@ -16,7 +16,13 @@
       "Bash(git push:*)",
       "Bash(docker-compose down:*)",
       "Bash(docker-compose build:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(npx prisma migrate dev --name init)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/expensetracker\" npx prisma migrate:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:3001/expensetracker\" npx prisma migrate dev:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(export DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/expensetracker\")"
     ],
     "deny": [],
     "ask": []
