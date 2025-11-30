@@ -1,74 +1,55 @@
-# Quick Start: Deploy to Coolify (All-in-One)
+# Quick Start: Deploy to Coolify (Self-Contained SQLite)
 
-**Total time: ~10 minutes** | **Everything runs in Coolify**
+**Total time: ~5 minutes** | **Truly self-contained app**
 
-This guide deploys your entire stack (database, backend, frontend) within Coolify using Nixpacks.
+This guide deploys your entire app with an embedded SQLite database - no separate database service needed!
 
 ---
 
 ## 🎯 What You'll Deploy
 
-- ✅ PostgreSQL database in Coolify
-- ✅ Backend API in Coolify (Nixpacks auto-build from GitHub)
-- ✅ Frontend React app in Coolify (static site)
+- ✅ Backend API with **embedded SQLite database** (Nixpacks auto-build from GitHub)
+- ✅ Frontend React app (static site)
 - ✅ Auto-deploy on git push
+- ✅ Database is just a file stored with your app
 
-**Everything stays in your Coolify instance!**
+**Everything in one app - truly self-contained!**
 
 ---
 
-## Step 1: Create PostgreSQL Database (2 minutes)
+## Step 1: Deploy Backend API (3 minutes)
 
 1. Log into **Coolify dashboard**
 
-2. Click **"+ New Resource"** → **"Database"** → **"PostgreSQL"**
+2. Click **"+ New Resource"** → **"Application"**
 
-3. Configure:
-   - **Name**: `expensetracker-db`
-   - **PostgreSQL Version**: `16` (or 15)
-   - **Database Name**: `expensetracker`
-   - **Username**: `postgres`
-   - **Password**: Click **"Generate"** (it will create a secure password)
-   - **Public Port**: Leave empty (keep it internal for security)
-
-4. Click **"Save"**
-
-5. **Copy the password** that was generated - you'll need it in Step 2!
-
-6. Your database connection string is:
-   ```
-   postgresql://postgres:YOUR_GENERATED_PASSWORD@expensetracker-db:5432/expensetracker
-   ```
-   Replace `YOUR_GENERATED_PASSWORD` with the password from step 5.
-
-✅ **Database created!** It's running in Coolify and only accessible internally.
-
----
-
-## Step 2: Deploy Backend API (4 minutes)
-
-1. In Coolify, click **"+ New Resource"** → **"Application"**
-
-2. **Source**:
+3. **Source**:
    - **Type**: **"GitHub App"** (connect your GitHub)
    - **Repository**: `sfdxb7/expense` (or your fork)
    - **Branch**: `main`
    - ⚠️ **Base Directory**: `/backend` **(CRITICAL for monorepo!)**
 
-3. **Build Pack**:
+4. **Build Pack**:
    - Should auto-select **Nixpacks** ✅
 
-4. **General**:
+5. **General**:
    - **Name**: `expense-tracker-backend`
    - **Port**: `3000`
    - **Domain**: Set your domain (e.g., `api.yourdomain.com`)
 
-5. **Environment Variables** - Add these:
+6. **Persistent Storage** ⚠️ **IMPORTANT for SQLite!**
+   - Click **"Storage"** tab
+   - Add **Persistent Storage**:
+     - **Source**: `/app/prisma` (this is where SQLite database lives)
+     - **Destination**: `/app/prisma`
+     - This ensures your database survives deployments!
+
+7. **Environment Variables** - Add these:
 
    ```bash
    NODE_ENV=production
    PORT=3000
-   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD_FROM_STEP1@expensetracker-db:5432/expensetracker
+   DATABASE_URL=file:./prisma/production.db
    JWT_SECRET=GENERATE_THIS_BELOW
    FRONTEND_URL=https://your-frontend-domain.com
    ```
@@ -78,26 +59,26 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
    node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
    ```
 
-6. **Advanced** (optional):
+8. **Advanced** (optional):
    - **Auto Deploy**: ✅ Enable
    - **Health Check Path**: `/health`
 
-7. Click **"Deploy"**
+9. Click **"Deploy"**
 
-8. **Watch logs** - should see:
-   ```
-   ✓ Nixpacks build
-   ✓ Prisma migrations
-   ✓ Server started
-   ```
+10. **Watch logs** - should see:
+    ```
+    ✓ Nixpacks build
+    ✓ Prisma migrations (creating SQLite database)
+    ✓ Server started
+    ```
 
-9. **Test**: `https://your-backend-domain.com/health` → `{"status":"ok"}`
+11. **Test**: `https://your-backend-domain.com/health` → `{"status":"ok"}`
 
-✅ **Backend live!**
+✅ **Backend live with embedded database!**
 
 ---
 
-## Step 3: Deploy Frontend (3 minutes)
+## Step 2: Deploy Frontend (2 minutes)
 
 1. Click **"+ New Resource"** → **"Application"**
 
@@ -132,7 +113,7 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 
 ---
 
-## Step 4: Create Admin User (1 minute)
+## Step 3: Create Admin User (1 minute)
 
 ### Option A: Use Backend Terminal in Coolify
 
@@ -145,25 +126,26 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 
 ### Option B: Direct Database Access
 
-1. Go to database → **"Terminal"** tab
+1. Go to backend app → **"Terminal"** tab
 2. Run:
    ```bash
-   psql -U postgres -d expensetracker
+   cd prisma
+   sqlite3 production.db
    ```
-3. Execute:
+3. Execute (generate hash first locally):
    ```sql
-   -- Generate hash first (locally):
+   -- Generate hash first on your machine:
    -- node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('admin123', 10));"
 
-   INSERT INTO "User" (username, email, password, "createdAt", "updatedAt")
-   VALUES ('admin', 'admin@example.com', '$2a$10$...YOUR_HASH...', NOW(), NOW());
+   INSERT INTO User (username, email, password, createdAt, updatedAt)
+   VALUES ('admin', 'admin@example.com', '$2a$10$...YOUR_HASH...', datetime('now'), datetime('now'));
    ```
 
 ✅ **User created!**
 
 ---
 
-## Step 5: Login & Test
+## Step 4: Login & Test
 
 1. Visit frontend domain
 2. Login with your credentials
@@ -182,14 +164,11 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 │      Your Coolify Instance      │
 │                                 │
 │  ┌────────────────────────┐    │
-│  │  PostgreSQL Database   │    │
-│  │  expensetracker-db     │    │
-│  └────────────────────────┘    │
-│              ↑                  │
-│              │                  │
-│  ┌────────────────────────┐    │
 │  │  Backend API (Node.js) │    │
 │  │  /backend from GitHub  │    │
+│  │                        │    │
+│  │  📁 SQLite Database    │    │
+│  │  (production.db file)  │    │
 │  └────────────────────────┘    │
 │              ↑                  │
 │              │                  │
@@ -205,7 +184,7 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
     GitHub Repository
 ```
 
-**All services communicate internally via Docker network!**
+**Database is just a file inside the backend container!**
 
 ---
 
@@ -213,25 +192,43 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 
 1. Push code to GitHub `main` branch
 2. Coolify webhook triggers
-3. Nixpacks rebuilds changed apps:
-   - Changes in `/backend` → rebuild backend only
-   - Changes in `/frontend` → rebuild frontend only
-4. Health checks pass
-5. Traffic switches to new version
-6. Zero downtime ✅
+3. Nixpacks rebuilds changed apps
+4. Database file persists through deployments (persistent storage)
+5. Zero downtime ✅
+
+---
+
+## 💾 Database Backups
+
+Since your database is just a file, backing up is simple:
+
+1. Go to backend app → **"Terminal"**
+2. Run:
+   ```bash
+   cp prisma/production.db prisma/production.db.backup-$(date +%Y%m%d)
+   ```
+
+Or download the file:
+1. Go to backend app → **"Files"**
+2. Navigate to `/app/prisma/production.db`
+3. Download it
+
+**Restore**: Just upload the backup file back!
 
 ---
 
 ## 🐛 Quick Troubleshooting
 
-### Backend can't connect to database
+### Database file disappears after deploy
 
-**Error**: `Can't reach database server`
+**Problem**: Persistent storage not mounted
 
 **Fix**:
-- Check `DATABASE_URL` uses service name: `expensetracker-db`
-- Verify password matches database password
-- Both must be in same Coolify project (same Docker network)
+1. Go to backend app → **"Storage"** tab
+2. Add persistent storage:
+   - Source: `/app/prisma`
+   - Destination: `/app/prisma`
+3. Redeploy
 
 ### Frontend can't reach backend (CORS)
 
@@ -240,11 +237,9 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 **Fix**:
 - Check backend `FRONTEND_URL` matches frontend domain exactly
 - Include protocol: `https://app.yourdomain.com`
-- Redeploy backend after changing
+- Redeploy backend
 
 ### Migrations fail
-
-**Error**: `Migration engine error`
 
 **Fix**:
 1. Go to backend → Terminal
@@ -255,40 +250,47 @@ This guide deploys your entire stack (database, backend, frontend) within Coolif
 
 ## 🔐 Security Checklist
 
-- ✅ Database has no public port (internal only)
 - ✅ Strong JWT_SECRET (64+ chars)
-- ✅ Database password auto-generated by Coolify
+- ✅ NODE_ENV=production
 - ✅ HTTPS enabled for frontend and backend
 - ✅ CORS properly configured
-- ✅ NODE_ENV=production
+- ✅ Database file in persistent storage
+- ✅ Regular backups of SQLite database file
 
 ---
 
-## 📈 What's Next?
+## 📈 Advantages of SQLite
 
-- [ ] Set up database backups in Coolify
-- [ ] Configure monitoring/alerts
-- [ ] Add SSL certificates for custom domains
-- [ ] Review resource limits
-- [ ] Set up staging environment
+| Feature | SQLite ✅ | PostgreSQL |
+|---------|----------|------------|
+| Setup | One file | Separate service |
+| Backups | Copy file | pg_dump required |
+| Migrations | Built-in | Built-in |
+| Complexity | Very simple | Medium |
+| Performance | Great for <100k records | Better for millions |
+| Cost | Free (no extra service) | Free but needs resources |
+
+**Perfect for:** Small to medium apps, single-server deployments, simple setups
 
 ---
 
 ## ✅ Deployment Checklist
 
-- [ ] Database created in Coolify
-- [ ] Database password saved
 - [ ] Backend deployed (base dir: `/backend`)
-- [ ] Backend env vars set
+- [ ] Backend persistent storage mounted (`/app/prisma`)
+- [ ] Backend env vars set (DATABASE_URL, JWT_SECRET, FRONTEND_URL)
 - [ ] Backend health check passing
 - [ ] Frontend deployed (base dir: `/frontend`, static site)
 - [ ] Frontend env var `VITE_API_URL` set
 - [ ] Admin user created
 - [ ] Login works
 - [ ] Auto-deploy enabled
+- [ ] Database backup strategy in place
 
 ---
 
-**Everything is now running in your Coolify instance! 🚀**
+**Your self-contained app is now live! 🚀**
+
+No external database, no separate services - just your app with an embedded SQLite database!
 
 For detailed documentation, see `COOLIFY_DEPLOYMENT.md`

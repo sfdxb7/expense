@@ -13,7 +13,6 @@
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest tests/integration"
   },
-  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",

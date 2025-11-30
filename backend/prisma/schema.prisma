@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -51,7 +51,7 @@ model Category {
 model Expense {
   id          Int      @id @default(autoincrement())
   date        DateTime
-  amount      Decimal  @db.Decimal(10, 2)
+  amount      Decimal
   description String?
   receiptPath String?
   createdAt   DateTime @default(now())
@@ -81,7 +81,7 @@ model Debtor {
 
 model Payment {
   id        Int      @id @default(autoincrement())
-  amount    Decimal  @db.Decimal(10, 2)
+  amount    Decimal
   date      DateTime
   notes     String?
   createdAt DateTime @default(now())

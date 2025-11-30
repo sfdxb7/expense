@@ -29,7 +29,9 @@
       "WebFetch(domain:coolify.io)",
       "WebFetch(domain:nixpacks.com)",
       "Bash(git rm:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate:*)"
     ],
     "deny": [],
     "ask": []

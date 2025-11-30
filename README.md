@@ -27,7 +27,7 @@ A modern, full-stack expense tracking application with property management, buil
 ### Backend
 - Node.js 18 with Express
 - Prisma ORM for database management
-- PostgreSQL 15 database
+- SQLite database (self-contained, file-based)
 - JWT authentication
 - Multer for file uploads
 - Helmet.js for security headers
@@ -40,18 +40,18 @@ A modern, full-stack expense tracking application with property management, buil
 
 Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker knowledge required!
 
-**Everything runs in Coolify - database, backend, and frontend all in one place.**
+**Truly self-contained app with embedded SQLite database - no separate database service needed!**
 
-📖 **Quick Start**: [COOLIFY_QUICKSTART.md](COOLIFY_QUICKSTART.md) - **10 minute setup**
+📖 **Quick Start**: [COOLIFY_QUICKSTART.md](COOLIFY_QUICKSTART.md) - **5 minute setup**
 
 📚 **Full Guide**: [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) - Complete documentation
 
 **What You Get:**
-- ✅ PostgreSQL database in Coolify
-- ✅ Backend API (auto-built with Nixpacks)
+- ✅ Backend API with **embedded SQLite database** (just a file!)
 - ✅ Frontend static site (Nginx)
 - ✅ Auto-deploy on git push
 - ✅ Zero Docker knowledge needed
+- ✅ Simple backups (just copy the database file)
 
 ---
 
@@ -60,8 +60,9 @@ Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker k
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL 15+
 - Git
+
+**Note:** No database installation needed! SQLite is embedded.
 
 ### Local Development
 
@@ -71,25 +72,18 @@ Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker k
    cd expense
    ```
 
-2. **Set up the database**
-   ```bash
-   # Install PostgreSQL (if not already installed)
-   # Create database
-   createdb expensetracker
-   ```
-
-3. **Set up environment variables**
+2. **Set up environment variables**
 
    **Backend** (`backend/.env`):
    ```bash
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/expensetracker
+   DATABASE_URL=file:./prisma/dev.db
    JWT_SECRET=your-super-secret-jwt-key-change-this
    NODE_ENV=development
    PORT=3000
    FRONTEND_URL=http://localhost:5173
    ```
 
-4. **Install and run backend**
+3. **Install and run backend**
    ```bash
    cd backend
    npm install
@@ -97,18 +91,18 @@ Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker k
    npm run dev
    ```
 
-5. **Install and run frontend**
+4. **Install and run frontend**
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
 
-6. **Access the application**
+5. **Access the application**
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3000
 
-7. **Create your first user**
+6. **Create your first user**
    ```bash
    cd backend
    node scripts/createUser.js

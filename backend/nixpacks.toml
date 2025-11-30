@@ -2,7 +2,8 @@
 # Coolify will automatically detect and use this file
 
 [phases.setup]
-nixPkgs = ["nodejs-18_x", "openssl"]
+# SQLite requires sqlite3, Node.js, and OpenSSL
+nixPkgs = ["nodejs-18_x", "openssl", "sqlite"]
 
 [phases.install]
 cmds = [
@@ -11,8 +12,10 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "npx prisma generate"
+  "npx prisma generate",
+  "mkdir -p prisma"
 ]
 
 [start]
+# Run migrations (creates SQLite database if not exists) then start server
 cmd = "npx prisma migrate deploy && node src/server.js"
