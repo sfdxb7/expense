@@ -36,22 +36,46 @@ A modern, full-stack expense tracking application with property management, buil
 
 ## Deployment
 
-### 🚀 Coolify Deployment (Recommended for Production)
+Choose your deployment method:
 
-Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker knowledge required!
+### 🚀 Option 1: Coolify (Easiest - Recommended)
 
-**Truly self-contained app with embedded SQLite database - no separate database service needed!**
+Deploy using **Nixpacks** - automatic builds from GitHub, no Docker knowledge required!
 
 📖 **Quick Start**: [COOLIFY_QUICKSTART.md](COOLIFY_QUICKSTART.md) - **5 minute setup**
 
-📚 **Full Guide**: [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) - Complete documentation
+**What You Get:**
+- ✅ Auto-deploy from GitHub on every push
+- ✅ Embedded SQLite database (self-contained)
+- ✅ Automatic SSL certificates
+- ✅ Zero Docker knowledge needed
+
+### 🐳 Option 2: Docker Compose (Full Control)
+
+Deploy using **Docker Compose** - complete control over your deployment.
+
+📖 **Quick Start**: [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) - **3 minute setup**
 
 **What You Get:**
-- ✅ Backend API with **embedded SQLite database** (just a file!)
-- ✅ Frontend static site (Nginx)
-- ✅ Auto-deploy on git push
-- ✅ Zero Docker knowledge needed
-- ✅ Simple backups (just copy the database file)
+- ✅ One command deployment (`docker-compose up -d`)
+- ✅ Embedded SQLite database with persistent volumes
+- ✅ Production-ready Nginx configuration
+- ✅ Full control over infrastructure
+
+**Quick start:**
+```bash
+# Copy environment file
+cp .env.docker.example .env
+
+# Edit .env and set JWT_SECRET
+nano .env
+
+# Start everything
+docker-compose up -d
+
+# Create first user
+docker-compose exec backend node scripts/createUser.js
+```
 
 ---
 
