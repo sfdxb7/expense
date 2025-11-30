@@ -1,0 +1,15 @@
+# Copy and paste these into Coolify Environment Variables
+# Go to: Application → Environment Variables → Add each one
+
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=05a09f61b3602220c3ac2800cff13e5e71201563d209faa4f2210df9debaf84b
+POSTGRES_DB=expensetracker
+DATABASE_URL=postgresql://postgres:05a09f61b3602220c3ac2800cff13e5e71201563d209faa4f2210df9debaf84b@db:5432/expensetracker
+JWT_SECRET=6ac00d3222a3084f93fff31cd96df4dcd1643c48cf01e1aa176f6386e788c19570ef1a33d79898fc273c222a4a668e7288baf45d85b881b229fe7674ec2869f4
+NODE_ENV=production
+FRONTEND_URL=https://fw080wkggcc4osow0oo4oso4.31.97.137.195.sslip.io
+
+# Optional (defaults work fine)
+# POSTGRES_USER=postgres
+# POSTGRES_DB=expensetracker
+# PORT=3000

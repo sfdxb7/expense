@@ -1,0 +1,18 @@
+# Nixpacks configuration for ExpenseTracker Backend
+# Coolify will automatically detect and use this file
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "openssl"]
+
+[phases.install]
+cmds = [
+  "npm ci --production=false"
+]
+
+[phases.build]
+cmds = [
+  "npx prisma generate"
+]
+
+[start]
+cmd = "npx prisma migrate deploy && node src/server.js"

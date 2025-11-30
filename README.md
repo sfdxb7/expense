@@ -12,6 +12,7 @@ A modern, full-stack expense tracking application with property management, buil
 - 🌙 **Dark Mode** - Modern 2025 UI with dark mode support
 - 📱 **Responsive Design** - Works on desktop and mobile devices
 - 📎 **File Uploads** - Upload receipts (images/PDFs up to 20MB)
+- 🧪 **Comprehensive Testing** - Full test coverage for backend and frontend
 
 ## Tech Stack
 
@@ -21,6 +22,7 @@ A modern, full-stack expense tracking application with property management, buil
 - React Router for navigation
 - Axios for API calls
 - Context API for state management
+- Vitest + React Testing Library for testing
 
 ### Backend
 - Node.js 18 with Express
@@ -30,20 +32,35 @@ A modern, full-stack expense tracking application with property management, buil
 - Multer for file uploads
 - Helmet.js for security headers
 - Rate limiting and input sanitization
+- Jest + Supertest for testing
 
-### Deployment
-- Docker & Docker Compose
-- GitHub Actions for CI/CD
-- GitHub Container Registry (GHCR)
-- Coolify-ready configuration
-- Multi-platform support (amd64, arm64)
+## Deployment
+
+### 🚀 Coolify Deployment (Recommended for Production)
+
+Deploy to Coolify using **Nixpacks** - automatic builds from GitHub, no Docker knowledge required!
+
+**Everything runs in Coolify - database, backend, and frontend all in one place.**
+
+📖 **Quick Start**: [COOLIFY_QUICKSTART.md](COOLIFY_QUICKSTART.md) - **10 minute setup**
+
+📚 **Full Guide**: [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) - Complete documentation
+
+**What You Get:**
+- ✅ PostgreSQL database in Coolify
+- ✅ Backend API (auto-built with Nixpacks)
+- ✅ Frontend static site (Nginx)
+- ✅ Auto-deploy on git push
+- ✅ Zero Docker knowledge needed
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
+- Node.js 18+
+- PostgreSQL 15+
 - Git
 
 ### Local Development
@@ -54,57 +71,49 @@ A modern, full-stack expense tracking application with property management, buil
    cd expense
    ```
 
-2. **Set up environment variables**
+2. **Set up the database**
    ```bash
-   cp .env.example .env
-   # Edit .env and set secure values for JWT_SECRET and POSTGRES_PASSWORD
+   # Install PostgreSQL (if not already installed)
+   # Create database
+   createdb expensetracker
    ```
 
-3. **Start with Docker Compose**
+3. **Set up environment variables**
+
+   **Backend** (`backend/.env`):
    ```bash
-   docker-compose up -d
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/expensetracker
+   JWT_SECRET=your-super-secret-jwt-key-change-this
+   NODE_ENV=development
+   PORT=3000
+   FRONTEND_URL=http://localhost:5173
    ```
 
-4. **Access the application**
-   - Frontend: http://localhost:3333
-   - Backend API: http://localhost:3001
-   - Database: localhost:5433
-
-5. **Create your first user**
+4. **Install and run backend**
    ```bash
-   docker-compose exec backend node scripts/createUser.js
+   cd backend
+   npm install
+   npx prisma migrate dev
+   npm run dev
+   ```
+
+5. **Install and run frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+6. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3000
+
+7. **Create your first user**
+   ```bash
+   cd backend
+   node scripts/createUser.js
    ```
    Follow the prompts to create an admin user.
-
-## Deployment
-
-### Option 1: Coolify with GitHub Actions (Recommended)
-
-For production deployment with automated CI/CD:
-
-1. **Read the deployment guide**
-   - See [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) for detailed instructions
-   - See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) for CI/CD setup
-
-2. **Quick summary:**
-   - Push code triggers GitHub Actions
-   - Actions build and test Docker images
-   - Images pushed to GitHub Container Registry
-   - Coolify pulls pre-built images for fast deployment
-
-### Option 2: Manual Docker Deployment
-
-Deploy anywhere that supports Docker Compose:
-
-```bash
-# Set environment variables
-export JWT_SECRET=$(openssl rand -hex 64)
-export POSTGRES_PASSWORD=$(openssl rand -hex 32)
-export FRONTEND_URL=https://your-domain.com
-
-# Deploy
-docker-compose up -d
-```
 
 ## Project Structure
 
@@ -117,6 +126,7 @@ expense-tracker/
 │   │   ├── middleware/     # Auth, validation, security
 │   │   └── lib/            # Prisma client, utilities
 │   ├── prisma/             # Database schema
+│   ├── tests/              # Backend tests (Jest)
 │   └── scripts/            # User management scripts
 ├── frontend/                # React + Vite app
 │   ├── src/
@@ -124,22 +134,20 @@ expense-tracker/
 │   │   ├── pages/          # Page components
 │   │   ├── context/        # React context providers
 │   │   └── lib/            # API client, utilities
-│   └── nginx.conf          # Nginx configuration
-├── .github/
-│   └── workflows/          # GitHub Actions CI/CD
-├── docker-compose.yml      # Local development
-├── docker-compose.coolify.yml # Coolify deployment
-└── docs/                   # Documentation
+│   └── tests/              # Frontend tests (Vitest)
+└── TESTING.md              # Testing documentation
 ```
 
 ## API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile
 - (Registration disabled - create users manually)
 
 ### Properties
 - `GET /api/properties` - List all properties
+- `GET /api/properties/:id` - Get property details
 - `POST /api/properties` - Create property
 - `PUT /api/properties/:id` - Update property
 - `DELETE /api/properties/:id` - Delete property
@@ -153,57 +161,67 @@ expense-tracker/
 ### Categories
 - `GET /api/categories/property/:propertyId` - List categories
 - `POST /api/categories/property/:propertyId` - Create category
+- `PUT /api/categories/property/:propertyId/:id` - Update category
+- `DELETE /api/categories/property/:propertyId/:id` - Delete category
 
 ### Reimbursements (Debtors)
 - `GET /api/debtors/property/:propertyId` - List debtors
 - `POST /api/debtors/property/:propertyId` - Create debtor
 - `PUT /api/debtors/property/:propertyId/:id` - Update debtor
+- `DELETE /api/debtors/property/:propertyId/:id` - Delete debtor
+
+### Payments
+- `GET /api/payments/debtor/:debtorId` - List payments
+- `POST /api/payments/debtor/:debtorId` - Create payment
+- `PUT /api/payments/debtor/:debtorId/:id` - Update payment
+- `DELETE /api/payments/debtor/:debtorId/:id` - Delete payment
 
 ### Reports
 - `GET /api/reports/property/:propertyId` - Generate expense report
+- `GET /api/reports/property/:propertyId/year/:year` - Yearly report
 
-## Configuration
+## Testing
 
-### Environment Variables
+See [TESTING.md](TESTING.md) for comprehensive testing documentation.
 
-Required variables (see `.env.example`):
+### Run Tests
 
+**Backend:**
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=secure_password
-POSTGRES_DB=expensetracker
-
-# Security
-JWT_SECRET=your-super-secret-jwt-key
-NODE_ENV=production
-
-# CORS
-FRONTEND_URL=https://your-domain.com
+cd backend
+npm test                 # Run all tests
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage report
 ```
 
-### File Upload Limits
+**Frontend:**
+```bash
+cd frontend
+npm test                 # Run all tests
+npm run test:ui          # Interactive UI
+npm run test:coverage    # With coverage report
+```
 
-Default: 20MB for receipts (images and PDFs)
+### Test Coverage
 
-To change:
-- Backend: `backend/src/middleware/upload.js`
-- Nginx: `frontend/nginx.conf` (client_max_body_size)
-- Express: `backend/src/server.js` (body parser limits)
+- **50+ tests** across backend and frontend
+- Backend: Jest + Supertest (API integration tests)
+- Frontend: Vitest + React Testing Library (component tests)
+- Coverage reports generated in `coverage/` directories
 
 ## User Management
 
 Public registration is disabled for security. Create users manually:
 
-### Method 1: Interactive Script (Recommended)
+### Interactive Script (Recommended)
 ```bash
-docker-compose exec backend node scripts/createUser.js
+cd backend
+node scripts/createUser.js
 ```
 
-### Method 2: Direct SQL
+### Direct Database Access
 ```bash
-docker-compose exec db psql -U postgres -d expensetracker
+psql -U postgres -d expensetracker
 ```
 ```sql
 INSERT INTO "User" (username, email, password)
@@ -212,28 +230,11 @@ VALUES ('admin', 'admin@example.com', '$2a$10$...');
 
 See [USER_MANAGEMENT.md](USER_MANAGEMENT.md) for detailed instructions.
 
-## Development
+## Database Migrations
 
-### Running locally without Docker
-
-**Backend:**
 ```bash
 cd backend
-npm install
-npx prisma migrate dev
-npm run dev
-```
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Database Migrations
-
-```bash
 # Create migration
 npx prisma migrate dev --name migration_name
 
@@ -242,15 +243,9 @@ npx prisma migrate deploy
 
 # Reset database (development only)
 npx prisma migrate reset
-```
 
-### Building for Production
-
-```bash
-# Build images
-docker-compose build
-
-# Or use GitHub Actions (automatic on push to main)
+# Open Prisma Studio
+npx prisma studio
 ```
 
 ## Security Features
@@ -259,94 +254,154 @@ docker-compose build
 - ✅ bcrypt password hashing (10 rounds)
 - ✅ Helmet.js security headers
 - ✅ CORS configuration
-- ✅ Rate limiting on auth endpoints
+- ✅ Rate limiting on auth endpoints (5 req/15min)
 - ✅ Input sanitization (XSS protection)
 - ✅ SQL injection prevention (Prisma ORM)
 - ✅ File upload validation (MIME type checking)
 - ✅ Environment variable secrets
 
-## Monitoring & Health Checks
+## Configuration
 
-All services include health checks:
+### Environment Variables
 
-- **Backend**: `GET /health` (30s interval)
-- **Frontend**: HTTP check (30s interval)
-- **Database**: `pg_isready` (10s interval)
-
-View status:
+**Backend** (`.env`):
 ```bash
-docker-compose ps
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost:5432/expensetracker
+
+# Security
+JWT_SECRET=your-super-secret-jwt-key
+NODE_ENV=development
+
+# Server
+PORT=3000
+
+# CORS
+FRONTEND_URL=http://localhost:5173
 ```
+
+**Testing** (`backend/.env.test`):
+```bash
+DATABASE_URL=postgresql://postgres:password@localhost:5432/expensetracker_test
+JWT_SECRET=test-jwt-secret-key-for-testing-only
+NODE_ENV=test
+```
+
+### File Upload Limits
+
+Default: 20MB for receipts (images and PDFs)
+
+To change:
+- Backend: `backend/src/middleware/upload.js`
+- Express: `backend/src/server.js` (body parser limits)
 
 ## Troubleshooting
 
 ### Database connection issues
 ```bash
-# Check if database is healthy
-docker-compose exec db pg_isready -U postgres
+# Check if PostgreSQL is running
+psql --version
+pg_isready
 
-# View database logs
-docker-compose logs db
+# Test connection
+psql -U postgres -d expensetracker
 ```
 
 ### Backend not starting
 ```bash
-# Check backend logs
-docker-compose logs backend
+# Check environment variables
+cat backend/.env
 
-# Verify environment variables
-docker-compose exec backend env | grep DATABASE_URL
+# Verify database migrations
+cd backend
+npx prisma migrate status
 ```
 
-### File upload 413 errors
-- Default limit: 20MB
-- Increase in: `nginx.conf`, `upload.js`, `server.js`
-- Rebuild frontend: `docker-compose up -d --build frontend`
-
 ### CORS errors
-- Verify `FRONTEND_URL` in backend environment
-- Should match your actual frontend URL
+- Verify `FRONTEND_URL` in backend `.env`
+- Should match your actual frontend URL (e.g., `http://localhost:5173`)
 
-## CI/CD Pipeline
+### Port already in use
+```bash
+# Kill process on port 3000 (backend)
+npx kill-port 3000
 
-GitHub Actions automatically:
-1. ✅ Builds Docker images on every push
-2. ✅ Runs tests and health checks
-3. ✅ Pushes to GitHub Container Registry
-4. ✅ Multi-platform builds (amd64, arm64)
-5. ✅ Signals Coolify for deployment
+# Kill process on port 5173 (frontend)
+npx kill-port 5173
+```
 
-View workflows: https://github.com/sfdxb7/expense/actions
+## Development Scripts
+
+### Backend
+```bash
+npm run dev          # Start development server
+npm test             # Run tests
+npm run migrate      # Run database migrations
+npm run studio       # Open Prisma Studio
+```
+
+### Frontend
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm test             # Run tests
+```
+
+## Production Deployment
+
+### Building for Production
+
+**Backend:**
+```bash
+cd backend
+npm install --production
+npx prisma migrate deploy
+npm start
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run build
+# Serve the dist/ folder with your web server
+```
+
+### Environment Setup
+
+1. Set up PostgreSQL database
+2. Configure environment variables
+3. Run database migrations
+4. Create initial user
+5. Start backend server
+6. Serve frontend build
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+3. Write tests for new functionality
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Open a Pull Request
 
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-- 📖 Documentation: See `docs/` folder
-- 🐛 Issues: https://github.com/sfdxb7/expense/issues
-- 💬 Discussions: https://github.com/sfdxb7/expense/discussions
+**Testing Requirements:**
+- All new features must include tests
+- Maintain 80%+ code coverage
+- All tests must pass before merging
 
 ## Changelog
 
 ### Latest Release
 
 **Features:**
+- Comprehensive test suite (Jest + Vitest)
+- 50+ tests covering backend and frontend
 - Compact expense layout with date grouping
 - Receipt upload support (20MB images/PDFs)
 - Manual user management (registration disabled)
 - Dark mode support
-- Automated CI/CD with GitHub Actions
-- Coolify-ready deployment
 
 **Security:**
 - Multiple security enhancements
@@ -359,6 +414,22 @@ MIT License - see LICENSE file for details
 - Responsive layout
 - Hover interactions
 - Column-aligned expense lists
+
+**Testing:**
+- Backend API integration tests
+- Frontend component tests
+- Test coverage reporting
+- CI/CD ready
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Support
+
+- 📖 Documentation: See `TESTING.md` and `USER_MANAGEMENT.md`
+- 🐛 Issues: https://github.com/sfdxb7/expense/issues
+- 💬 Discussions: https://github.com/sfdxb7/expense/discussions
 
 ---
 

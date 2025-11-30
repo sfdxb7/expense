@@ -1,354 +1,428 @@
-# Coolify Deployment Guide
-
-This guide will help you deploy the Expense Tracker application to Coolify with automated GitHub Actions builds.
-
-## Prerequisites
-
-- A Coolify instance (self-hosted or managed)
-- GitHub repository: https://github.com/sfdxb7/expense
-- Domain name (optional but recommended)
-- GitHub account (for Container Registry access)
-
-## Deployment Options
-
-### Option 1: GitHub Actions + Pre-built Images (Recommended)
-
-This option uses GitHub Actions to build and test images before deployment, resulting in:
-- ✅ Faster Coolify deployments (no build time)
-- ✅ Pre-tested images
-- ✅ Automated CI/CD pipeline
-- ✅ Build caching for efficiency
-
-### Option 2: Direct Build on Coolify
-
-Coolify builds images directly from source code. Simpler but slower deployments.
-
-## Quick Start (Option 1: GitHub Actions)
-
-### 1. Enable GitHub Container Registry
-
-First, make your GitHub Container Registry images public or configure access:
-
-#### Option A: Make Images Public (Easier)
-
-1. Go to https://github.com/sfdxb7/expense/packages
-2. Click on each package (backend and frontend)
-3. Click "Package settings" → "Change visibility" → "Public"
-
-#### Option B: Use GitHub Token (More Secure)
-
-In Coolify, you'll add a GitHub Personal Access Token (PAT) with `read:packages` permission.
-
-### 2. Trigger GitHub Actions Build
-
-Push your code to trigger the first build:
-
-```bash
-git push origin main
-```
-
-Or manually trigger the workflow:
-1. Go to https://github.com/sfdxb7/expense/actions
-2. Click "Coolify Deployment"
-3. Click "Run workflow"
-
-Wait for the workflow to complete (2-3 minutes). This builds and pushes images to GitHub Container Registry.
-
-### 3. Connect to Coolify
-
-1. Log into your Coolify dashboard
-2. Click "Add New Resource" → "New Application"
-3. Select "Docker Compose" as the build pack
-4. Connect your Git repository: `https://github.com/sfdxb7/expense`
-5. Select branch: `main`
-6. **Important**: Set Docker Compose file path to: `docker-compose.coolify.yml`
-
-### 4. Configure GitHub Actions Integration (Optional but Recommended)
-
-To make Coolify wait for GitHub Actions to complete before deploying:
-
-1. In Coolify application settings, go to "Build & Deploy"
-2. Enable "GitHub Actions Integration"
-3. Set GitHub Actions Workflow URL:
-   ```
-   https://github.com/sfdxb7/expense/actions/workflows/coolify-deploy.yml
-   ```
-4. This ensures Coolify deploys only after images are built and tested
-
-### 5. Configure GitHub Container Registry Access (If Private)
-
-If you didn't make images public, add registry credentials:
-
-1. In Coolify, go to your application → "Registries"
-2. Add new registry:
-   - Registry: `ghcr.io`
-   - Username: Your GitHub username
-   - Password: GitHub Personal Access Token with `read:packages` scope
-3. Save
-
-### 6. Configure Environment Variables
-
-In Coolify, navigate to your project's Environment Variables section and set the following:
-
-#### Required Variables
-
-```bash
-# Database Configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<generate-secure-password>
-POSTGRES_DB=expensetracker
-
-# JWT Secret (CRITICAL - generate a strong random string)
-JWT_SECRET=<generate-secure-jwt-secret>
-
-# Node Environment
-NODE_ENV=production
-```
-
-#### Production URLs
-
-```bash
-# Replace with your actual domain
-FRONTEND_URL=https://your-domain.com
-
-# If Coolify assigns different URLs
-BACKEND_URL=https://api.your-domain.com
-```
-
-#### Optional Overrides
-
-```bash
-# Custom ports (usually not needed in Coolify)
-BACKEND_PORT=3001
-FRONTEND_PORT=3333
-```
-
-### 4. Generate Secure Secrets
-
-Generate secure random strings for sensitive variables:
-
-```bash
-# For JWT_SECRET (Node.js)
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-
-# For POSTGRES_PASSWORD
-openssl rand -hex 32
-```
-
-### 7. Configure Domain (Optional)
-
-1. In Coolify, go to your application settings
-2. Under "Domains", add your custom domain:
-   - Frontend: `your-domain.com`
-   - Backend API: `api.your-domain.com` (optional)
-3. Coolify will automatically handle SSL/TLS certificates
-
-### 8. Deploy
-
-1. Click "Deploy" in Coolify
-2. If GitHub Actions integration is enabled:
-   - Coolify triggers the GitHub Action
-   - Waits for images to be built and pushed
-   - Then pulls and deploys the images (fast!)
-3. If not using GitHub Actions, Coolify builds from source (slower)
-4. Monitor the deployment logs
-5. Wait for all services to become healthy (green status)
-
-## Quick Start (Option 2: Direct Build)
-
-If you prefer Coolify to build images directly:
-
-1. Follow steps 1-3 from Option 1
-2. In step 6, use `docker-compose.yml` instead of `docker-compose.coolify.yml`
-3. Skip GitHub Actions integration
-4. Coolify will build images on each deployment
-
-## Configuration Details
-
-### Service Ports
-
-- **Frontend**: Port 80 (nginx) → Coolify will map to HTTPS
-- **Backend**: Port 3000 (Express API)
-- **Database**: Port 5432 (PostgreSQL, internal only)
-
-### Health Checks
-
-All services include health checks:
-
-- **Database**: `pg_isready` check every 10s
-- **Backend**: HTTP check on `/health` endpoint every 30s
-- **Frontend**: HTTP check on nginx every 30s
-
-### Persistent Storage
-
-Two volumes are configured for data persistence:
-
-- `postgres_data`: Database storage
-- `uploads`: User-uploaded receipts (20MB limit)
-
-## Post-Deployment
-
-### Create Your First User
-
-Since public registration is disabled, you need to manually create users:
-
-```bash
-# Access the backend container via Coolify terminal
-docker exec -it <backend-container-name> sh
-
-# Run the user creation script
-node scripts/createUser.js
-
-# Follow the prompts to create a user
-```
-
-Or use direct database access (see [USER_MANAGEMENT.md](USER_MANAGEMENT.md) for details).
-
-### Verify Deployment
-
-1. Visit your frontend URL: `https://your-domain.com`
-2. Test login with your created user
-3. Check that file uploads work (receipts)
-4. Verify all features work correctly
-
-## Troubleshooting
-
-### Build Failures
-
-**Issue**: Build fails during npm install
-
-**Solution**: Clear Coolify's build cache and redeploy
-
-```bash
-# In Coolify, go to Settings → Advanced → Clear Build Cache
-```
-
-### Database Connection Issues
-
-**Issue**: Backend can't connect to database
-
-**Solution**: Check these environment variables:
-
-- `DATABASE_URL` must match `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`
-- Format: `postgresql://<user>:<password>@db:5432/<database>`
-
-### CORS Errors
-
-**Issue**: Frontend can't communicate with backend
-
-**Solution**: Update `FRONTEND_URL` in backend environment variables:
-
-```bash
-FRONTEND_URL=https://your-actual-domain.com
-```
-
-### File Upload 413 Errors
-
-**Issue**: Large file uploads fail
-
-**Solution**: The limit is set to 20MB. If needed, adjust in:
-- [backend/src/middleware/upload.js](backend/src/middleware/upload.js#L43)
-- [backend/src/server.js](backend/src/server.js#L23-L24)
-- [frontend/nginx.conf](frontend/nginx.conf#L9)
-
-### Container Health Check Failures
-
-**Issue**: Services keep restarting
-
-**Solution**:
-
-1. Check Coolify logs for specific errors
-2. Verify all environment variables are set
-3. Ensure database is ready before backend starts (health check dependency)
-
-## Coolify-Specific Features
-
-### Auto-Deploy on Push
-
-Enable in Coolify settings:
-1. Go to Application Settings
-2. Enable "Auto Deploy"
-3. Choose branch (e.g., `main`)
-4. Every push will trigger automatic deployment
-
-### Zero-Downtime Deployments
-
-Coolify supports rolling updates:
-1. New containers start
-2. Health checks pass
-3. Old containers are terminated
-4. No service interruption
-
-### Monitoring
-
-Coolify provides:
-- Real-time container logs
-- Resource usage (CPU, Memory)
-- Service status dashboard
-- Automatic restarts on failures
-
-## Security Checklist
-
-Before going live, ensure:
-
-- [ ] Strong `JWT_SECRET` is set (64+ character random string)
-- [ ] Strong `POSTGRES_PASSWORD` is set
-- [ ] `FRONTEND_URL` is set to your actual production domain
-- [ ] `NODE_ENV=production` is set
-- [ ] SSL/TLS certificates are active (Coolify handles this)
-- [ ] Database is not publicly accessible
-- [ ] File upload limits are appropriate (20MB default)
-
-## Backup Strategy
-
-### Database Backups
-
-Coolify may offer automated backups. Alternatively:
-
-```bash
-# Manual backup via Coolify terminal
-docker exec <db-container> pg_dump -U postgres expensetracker > backup.sql
-
-# Download via Coolify file manager
-```
-
-### Uploaded Files Backup
-
-The `uploads` volume contains user receipts. Consider:
-- Coolify's volume backup feature
-- Manual exports via terminal
-- S3/object storage integration (requires code changes)
-
-## Scaling Considerations
-
-For high traffic:
-
-1. **Database**: Upgrade to Coolify's managed PostgreSQL or external service
-2. **Backend**: Increase container resources in Coolify settings
-3. **Frontend**: nginx handles static files efficiently (no changes needed)
-4. **Uploads**: Consider moving to S3/R2 for larger scale
-
-## Support
-
-For Coolify-specific issues:
-- Coolify Documentation: https://coolify.io/docs
-- Coolify Community: https://discord.gg/coolify
-
-For application issues:
-- Review application logs in Coolify
-- Check [USER_MANAGEMENT.md](USER_MANAGEMENT.md) for user management
-- Verify environment variables are correctly set
-
-## Update Procedure
-
-To deploy updates:
-
-1. Push changes to your Git repository
-2. In Coolify, click "Deploy" (or auto-deploys if enabled)
-3. Monitor build and deployment logs
-4. Database migrations run automatically via Prisma
-5. Verify functionality after deployment
+# Coolify Deployment Guide - ExpenseTracker
+
+This guide shows you how to deploy the ExpenseTracker application to Coolify using **Nixpacks** (automatic builds from GitHub).
+
+## 🎯 What is Nixpacks?
+
+Nixpacks is an automatic build system that:
+- ✅ Detects your application type (Node.js, React, etc.)
+- ✅ Automatically generates build configurations
+- ✅ No Dockerfile needed!
+- ✅ Works directly from your GitHub repository
+- ✅ Simpler than Docker for most use cases
+
+## 📋 Prerequisites
+
+1. **Coolify instance** running (self-hosted or cloud)
+2. **GitHub repository** with your code
+3. That's it! Database will be created in Coolify
+
+## 🚀 Deployment Steps
+
+### Step 1: Create PostgreSQL Database in Coolify
+
+1. Go to your **Coolify dashboard**
+2. Click **"+ New Resource"** → **"Database"** → **"PostgreSQL"**
+3. Configure:
+   - **Name**: `expensetracker-db`
+   - **PostgreSQL Version**: 15 or 16
+   - **Database Name**: `expensetracker`
+   - **Username**: `postgres` (default is fine)
+   - **Password**: Click "Generate" or set your own secure password
+   - **Public Port**: Leave empty (internal only for security)
+4. Click **"Save"**
+5. Coolify will automatically:
+   - ✅ Create the database container
+   - ✅ Set up persistent storage
+   - ✅ Configure health checks
+   - ✅ Generate internal connection details
+
+6. **Get the connection string**:
+   - In the database details page, you'll see connection info
+   - The **internal connection string** format:
+     ```
+     postgresql://postgres:YOUR_PASSWORD@expensetracker-db:5432/expensetracker
+     ```
+   - **Important**: Use the service name `expensetracker-db` as the hostname (internal Docker network)
+   - Save this connection string for Step 2
+
+**Note**: The database is only accessible from inside Coolify's internal network - your backend will connect to it using the service name.
 
 ---
 
-**Ready to deploy?** Follow the steps above and your Expense Tracker will be live in minutes!
+### Step 2: Deploy Backend API
+
+1. Click **"+ New Resource"** → **"Application"**
+2. **Source Configuration**:
+   - Choose **"GitHub App"** (recommended) or **"Public Repository"**
+   - Select your repository: `sfdxb7/expense` (or your fork)
+   - **Branch**: `main`
+   - **Base Directory**: `/backend` ⚠️ **Important for monorepo!**
+
+3. **Build Pack**:
+   - Coolify will auto-select **Nixpacks** ✅
+   - If not, manually select **Nixpacks**
+
+4. **General Settings**:
+   - **Name**: `expense-tracker-backend`
+   - **Port**: `3000` (this is where your Express server listens)
+   - **Domain**: Add your backend domain (e.g., `api.yourdomain.com`)
+   - Or use Coolify's generated domain
+
+5. **Environment Variables** (click "Environment Variables" tab):
+
+   Add these variables:
+
+   ```bash
+   NODE_ENV=production
+   PORT=3000
+
+   # Database - Use connection string from Step 1
+   # Replace YOUR_DB_PASSWORD with the password from your Coolify database
+   DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@expensetracker-db:5432/expensetracker
+
+   # JWT Secret (generate a secure random string)
+   JWT_SECRET=<generate-using-command-below>
+
+   # CORS - Set to your frontend domain
+   FRONTEND_URL=https://your-frontend-domain.com
+   ```
+
+   **Generate JWT_SECRET**:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+   ```
+
+6. **Advanced Settings** (optional):
+   - **Auto Deploy**: Enable to deploy on every git push
+   - **Health Check Path**: `/health`
+   - **Health Check Interval**: 30s
+
+7. Click **"Deploy"**
+
+8. **Verify Deployment**:
+   - Check logs for successful migration: `npx prisma migrate deploy`
+   - Visit `https://your-backend-domain.com/health` - should return `{ "status": "ok" }`
+
+---
+
+### Step 3: Deploy Frontend
+
+1. Click **"+ New Resource"** → **"Application"**
+2. **Source Configuration**:
+   - Choose **"GitHub App"** or **"Public Repository"**
+   - Select the same repository
+   - **Branch**: `main`
+   - **Base Directory**: `/frontend` ⚠️ **Important for monorepo!**
+
+3. **Build Pack**:
+   - Select **Nixpacks**
+
+4. **General Settings**:
+   - **Name**: `expense-tracker-frontend`
+   - **Is it a static site?**: ✅ **YES** (Enable this!)
+   - **Port**: `80` (auto-set for static sites)
+   - **Publish Directory**: `dist` ⚠️ **Important!**
+   - **Domain**: Add your frontend domain (e.g., `app.yourdomain.com`)
+
+5. **Environment Variables** (Build Time):
+
+   ```bash
+   # API URL - use your backend domain from Step 2
+   VITE_API_URL=https://api.yourdomain.com
+   ```
+
+   **Note**: Vite build-time variables must start with `VITE_`
+
+6. **Advanced Settings**:
+   - **Auto Deploy**: Enable
+   - **Static Site Web Server**: Nginx (default)
+
+7. Click **"Deploy"**
+
+8. **Verify Deployment**:
+   - Visit your frontend domain
+   - You should see the login page
+   - Check browser console for API connection errors
+
+---
+
+### Step 4: Create Your First User
+
+Since registration is disabled, you need to create a user manually.
+
+**Option 1: Using Coolify Database Terminal**
+
+1. Go to your PostgreSQL database in Coolify
+2. Click **"Terminal"** or **"Execute Command"**
+3. Run:
+   ```bash
+   psql -U postgres -d expensetracker
+   ```
+4. In the SQL prompt:
+   ```sql
+   -- Generate password hash (use bcrypt online tool or run locally)
+   -- Example with password "admin123"
+   INSERT INTO "User" (username, email, password, "createdAt", "updatedAt")
+   VALUES (
+     'admin',
+     'admin@example.com',
+     '$2a$10$XYZ...', -- Replace with actual bcrypt hash
+     NOW(),
+     NOW()
+   );
+   ```
+
+**Option 2: Using Backend Container Terminal**
+
+1. Go to your backend application in Coolify
+2. Click **"Terminal"**
+3. Run:
+   ```bash
+   node scripts/createUser.js
+   ```
+4. Follow the prompts to create a user
+
+**Generate bcrypt hash** (on your local machine):
+```bash
+cd backend
+node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-password', 10));"
+```
+
+---
+
+## 🔧 Configuration Files Explained
+
+### `backend/nixpacks.toml`
+```toml
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "openssl"]  # Install Node.js 18 and OpenSSL
+
+[phases.install]
+cmds = ["npm ci --production=false"]   # Install all dependencies
+
+[phases.build]
+cmds = ["npx prisma generate"]         # Generate Prisma client
+
+[start]
+cmd = "npx prisma migrate deploy && node src/server.js"  # Run migrations then start
+```
+
+### `frontend/nixpacks.toml`
+```toml
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]              # Install Node.js 18
+
+[phases.install]
+cmds = ["npm ci"]                      # Install dependencies
+
+[phases.build]
+cmds = ["npm run build"]               # Build React app
+
+[start]
+staticAssets = { dir = "dist" }        # Serve static files from dist/
+```
+
+---
+
+## 🔄 Automatic Deployments (CI/CD)
+
+### Enable GitHub Auto-Deploy
+
+1. In both frontend and backend apps, go to **"Settings"**
+2. Enable **"Auto Deploy"**
+3. Now every push to `main` branch will:
+   - ✅ Pull latest code
+   - ✅ Run Nixpacks build
+   - ✅ Deploy automatically
+   - ✅ Zero downtime (health checks)
+
+### Deployment Workflow
+
+```
+1. You push code to GitHub
+   ↓
+2. Coolify detects the push (webhook)
+   ↓
+3. Nixpacks analyzes your code
+   ↓
+4. Builds backend/frontend separately (based on Base Directory)
+   ↓
+5. Runs health checks
+   ↓
+6. Switches traffic to new version
+   ↓
+7. Done! ✅
+```
+
+---
+
+## 📊 Monitoring & Logs
+
+### View Logs
+
+**Backend Logs**:
+1. Go to backend app in Coolify
+2. Click **"Logs"** tab
+3. See real-time logs from Express server
+
+**Frontend Logs**:
+1. Go to frontend app
+2. Click **"Logs"** tab
+3. See Nginx access/error logs
+
+### Health Checks
+
+Coolify automatically monitors:
+- **Backend**: `GET /health` every 30s
+- **Frontend**: HTTP 200 check every 30s
+- **Database**: PostgreSQL connection check
+
+If health check fails, Coolify alerts you and can auto-restart.
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend Won't Start
+
+**Check logs for common issues:**
+
+1. **Database connection error**:
+   ```
+   Error: Can't reach database server
+   ```
+   **Fix**: Verify `DATABASE_URL` in environment variables
+   - Make sure hostname is the database service name (e.g., `expensetracker-db`)
+   - Check password is correct
+
+2. **Missing JWT_SECRET**:
+   ```
+   Error: JWT_SECRET is not defined
+   ```
+   **Fix**: Add `JWT_SECRET` to environment variables
+
+3. **Port binding error**:
+   ```
+   Error: Port 3000 already in use
+   ```
+   **Fix**: Make sure Port setting in Coolify is `3000`
+
+### Frontend Build Fails
+
+1. **Missing VITE_API_URL**:
+   ```
+   Warning: VITE_API_URL not defined
+   ```
+   **Fix**: Add `VITE_API_URL` to build-time environment variables
+
+2. **Wrong publish directory**:
+   - Make sure **Publish Directory** is set to `dist`
+   - Check **"Is it a static site?"** is enabled
+
+### CORS Errors
+
+**Error in browser console**:
+```
+Access to fetch at 'https://api.example.com' has been blocked by CORS
+```
+
+**Fix**:
+1. Go to backend app environment variables
+2. Set `FRONTEND_URL=https://your-frontend-domain.com`
+3. Redeploy backend
+
+### Database Migration Errors
+
+**If migrations fail on deployment**:
+
+1. Go to backend app terminal in Coolify
+2. Run manually:
+   ```bash
+   npx prisma migrate deploy
+   ```
+3. Check for migration errors in logs
+
+---
+
+## 🔐 Security Checklist
+
+Before going to production:
+
+- ✅ Change default PostgreSQL password
+- ✅ Generate strong `JWT_SECRET` (64+ characters)
+- ✅ Set `NODE_ENV=production`
+- ✅ Set correct `FRONTEND_URL` for CORS
+- ✅ Enable HTTPS on both frontend and backend domains
+- ✅ Create secure admin user password
+- ✅ Review Coolify firewall settings
+- ✅ Enable auto-backups for PostgreSQL database
+
+---
+
+## 📈 Scaling & Performance
+
+### Enable Coolify Features
+
+1. **Auto Backups** (PostgreSQL):
+   - Go to database settings
+   - Enable scheduled backups
+   - Choose backup retention period
+
+2. **Resource Limits**:
+   - Set memory limits for each container
+   - Recommended: Backend 512MB, Frontend 256MB, DB 1GB
+
+3. **Load Balancing** (if needed):
+   - Scale backend horizontally
+   - Coolify can run multiple backend instances
+
+---
+
+## 🆚 Nixpacks vs Docker Compose
+
+### Why Nixpacks is Better for Your Use Case
+
+| Feature | Nixpacks ✅ | Docker Compose |
+|---------|------------|----------------|
+| Configuration | Auto-detected | Manual Dockerfile |
+| Monorepo Support | Native (Base Directory) | Complex setup |
+| Learning Curve | Low | Medium-High |
+| Build Speed | Fast (cached) | Depends on Dockerfile |
+| GitHub Integration | Native | Needs CI/CD setup |
+| Maintenance | Minimal | Update Dockerfiles |
+
+**When to use Docker Compose instead**:
+- Complex multi-service dependencies
+- Need exact Docker control
+- Custom build requirements
+
+---
+
+## 📚 Additional Resources
+
+- [Coolify Nixpacks Docs](https://coolify.io/docs/applications/build-packs/nixpacks)
+- [Nixpacks Documentation](https://nixpacks.com/docs)
+- [Coolify Community](https://github.com/coollabsio/coolify/discussions)
+
+---
+
+## ✅ Quick Deployment Checklist
+
+- [ ] PostgreSQL database created in Coolify
+- [ ] Backend deployed with base directory `/backend`
+- [ ] Backend environment variables set (DATABASE_URL, JWT_SECRET, FRONTEND_URL)
+- [ ] Backend health check passing at `/health`
+- [ ] Frontend deployed with base directory `/frontend`
+- [ ] Frontend marked as static site with publish directory `dist`
+- [ ] Frontend environment variable `VITE_API_URL` set
+- [ ] First user created via database or script
+- [ ] Login works on frontend
+- [ ] Auto-deploy enabled on both apps
+- [ ] HTTPS enabled for both domains
+
+---
+
+**Your ExpenseTracker is now live on Coolify! 🎉**
+
+Any issues? Check the logs in Coolify dashboard or reach out for help.

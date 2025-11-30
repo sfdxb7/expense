@@ -22,7 +22,14 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/expensetracker\" npx prisma migrate:*)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:3001/expensetracker\" npx prisma migrate dev:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(export DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/expensetracker\")"
+      "Bash(export DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/expensetracker\")",
+      "Bash(xargs:*)",
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:coolify.io)",
+      "WebFetch(domain:nixpacks.com)",
+      "Bash(git rm:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": [],
     "ask": []

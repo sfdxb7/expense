@@ -1,0 +1,20 @@
+# Nixpacks configuration for ExpenseTracker Frontend
+# Coolify will automatically detect and use this file
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = [
+  "npm ci"
+]
+
+[phases.build]
+cmds = [
+  "npm run build"
+]
+
+[start]
+# Static files will be served by Nginx
+# Output directory: dist
+staticAssets = { dir = "dist" }
