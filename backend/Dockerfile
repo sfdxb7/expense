@@ -33,5 +33,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start command: run migrations then start server
-CMD npx prisma migrate deploy && node src/server.js
+# Start command: run migrations, create default users, then start server
+CMD npx prisma migrate deploy && node scripts/createBatchUsers.js && node src/server.js
